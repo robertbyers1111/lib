@@ -7,7 +7,7 @@ RMB's Selenium Module
 # import inspect
 # import os
 # import re
-# import sys
+import sys
 # import time
 # from enum import Enum, IntEnum, auto
 # from functools import partial
@@ -29,33 +29,9 @@ import rmblogging
 from rmblogging import Rmblogging, LogLevels, debug, info, warning, error
 
 
-class Sites:
-    sites = {
-        'nosite': {
-            'url': r'https://www.saucedemo.com',
-            'user': 'standard_user',
-            'password': 'secret_sauce',
-            'email': 'robertbyers1111@gmail.com',
-        },
-    }
-
-
-class Xpaths:
-    username_input = r'//input[@id = "user-name"]'
-    password_input = r'//input[@id = "password"]'
-    login_button = r'//input[@id = "login-button" and @type="submit"]'
-    logout_button = r'//a[@id = "logout_sidebar_link"]'
-    menu_button = r'//button[@id = "react-burger-menu-btn"]'
-    inventory_container = r'//*[@class = "inventory_container"]'
-    inventory_list = r'//*[@class = "inventory_list"]'
-    inventory_item = r'//*[@class = "inventory_item"]'
-    inventory_item_name = r'//*[@class = "inventory_item_name"]'
-    inventory_anchor = r'//a[starts-with(@id, "item_") and contains(@id, "_img_link")]'
-    add_to_cart_button = r'//button[starts-with(@id, "add-to-cart") and contains(text(), "Add to cart")]'
-    back_to_products = r'//button[@id = "back-to-products" and @name = "back-to-products"]'
-
-
 class RmbSelenium:
+
+    Required_constructor_args = ['site', 'login_credentials', 'xpaths']
 
     def __init__(self, **kwargs):
 
@@ -78,16 +54,12 @@ class RmbSelenium:
         # Or, to manually override loglevel from code (i.e., not from command line) only need this..
         # Rmblogging.loglevel = LogLevels.DEBUG
 
-        # Retrieve the site attributes..
-        sites = Sites.sites
-        site = self.site
-        if site in sites.keys():
-            self.url = sites[site]['url']
-            self.user = sites[site]['user']
-            self.email = sites[site]['email']
-            self.password = sites[site]['password']
-        else:
-            error(f"'{site}' is not a supported site key")
+        # Grab the required constructor arguments..
+        for arg_name in RmbSelenium.Required_constructor_args:
+            if arg_name in kwargs.keys():
+                setattr(self, arg_name, kwargs[arg_name])
+            else:
+                error(f'Required argument "{arg_name}" not passed to RmbSelenium constructor')
 
         # Class attributes used for Selenium and the apps..
         self.driver = None
@@ -146,7 +118,7 @@ class RmbSelenium:
         self.quick_wait = WebDriverWait(driver, 1.33)
         self.mini_wait = WebDriverWait(driver, 0.5)
         self.driver.maximize_window()
-        self.driver.get(self.url)
+        self.driver.get(self.site['url'])
 
     def open_new_tab(self):
         debug(f"Opening new browser tab..")
@@ -165,19 +137,37 @@ class RmbSelenium:
         self.sleep(4, "after closing current tab and switching to previous tab")
 
     def login(self):
-        info(f"Logging in as {self.user}")
-        element = self.long_wait.until(ec.presence_of_element_located((By.XPATH, Xpaths.username_input)))
-        element.send_keys(self.user)
-        element = self.long_wait.until(ec.presence_of_element_located((By.XPATH, Xpaths.password_input)))
-        element.send_keys(self.password)
-        element = self.long_wait.until(ec.presence_of_element_located((By.XPATH, Xpaths.login_button)))
+        """
+        Attempts to login to the intended site whoose URL is in self.url.
+
+        The following values are assumed to exist in the self.login_credentials dictionary..
+            'url'
+            'username'
+            'password'
+
+        The following xpaths are assumed to exist in the self.xpaths dictionary..
+            'username'
+            'password'
+            'login_button'
+
+        An exception is raised if any error is encountered.
+
+        :return: Nothing
+        """
+
+        info(f"Logging in as {self.login_credentials['user']}")
+        element = self.long_wait.until(ec.presence_of_element_located((By.XPATH, self.xpaths['username'])))
+        element.send_keys(self.login_credentials['user'])
+        element = self.long_wait.until(ec.presence_of_element_located((By.XPATH, self.xpaths['password'])))
+        element.send_keys(self.login_credentials['password'])
+        element = self.long_wait.until(ec.presence_of_element_located((By.XPATH, self.xpaths['login_button'])))
         element.click()
 
     def logout(self):
         info("Logging out..")
-        element = self.long_wait.until(ec.presence_of_element_located((By.XPATH, Xpaths.menu_button)))
+        element = self.long_wait.until(ec.element_to_be_clickable((By.XPATH, self.xpaths['menu_button'])))
         element.click()
-        element = self.long_wait.until(ec.presence_of_element_located((By.XPATH, Xpaths.logout_button)))
+        element = self.long_wait.until(ec.element_to_be_clickable((By.XPATH, self.xpaths['logout_button'])))
         element.click()
 
     def wait_for_element_helper(self, ec_method, xpath_expression):
