@@ -30,7 +30,7 @@ class LogLevels(IntEnum):
 class Rmblogging:
     # Defaults for logging..
     loglevel = LogLevels.DEBUG
-    MAX_COLUMNS = 222
+    MAX_COLUMNS = 190
     FIXED_LEVEL_LEN_ENABLED = True  # Whether to truncate the log level in the log line's prefix
     FIXED_LEVEL_LEN_LEN = 5
     print_func = print
