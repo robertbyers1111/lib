@@ -31,6 +31,7 @@ class Rmblogging:
     # Defaults for logging..
     loglevel = LogLevels.DEBUG
     MAX_COLUMNS = 190
+    SHOW_CALLERNAME = False  # Whether to display the name of the calling function (at the far right end of the line)
     FIXED_LEVEL_LEN_ENABLED = True  # Whether to truncate the log level in the log line's prefix
     FIXED_LEVEL_LEN_LEN = 5
     print_func = print
@@ -47,6 +48,7 @@ def logmsg(level, msg):
     MESSAGE   The message passed in from the user, indirectly via one of the externally facing log methods.
     CALLER    The name of the user's method that called the externally facing log method. Note CALLER is
               displayed right-justified per the maximum number of columns configured in __init__.
+              Disabled if SHOW_CALLERNAME is False.
 
     Parameters and return values..
 
@@ -56,10 +58,11 @@ def logmsg(level, msg):
 
     The following interal variables are used..
 
-        level_str     (str) The human-readable representation of the log level.
-        msg_prefix    (str) The "[LEVEL TIMESTAMP]" that starts each log line.
-        msg_suffix    (str) The "[CALLER]" displayed right-justified at the end of each log line.
-        filler        (str) A string of spaces used to push msg_suffix to its right-justified starting column.
+        level_str       (str)  The human-readable representation of the log level.
+        msg_prefix      (str)  The "[LEVEL TIMESTAMP]" that starts each log line.
+        msg_suffix      (str)  The "[CALLER]" displayed right-justified at the end of each log line.
+        filler          (str)  A string of spaces used to push msg_suffix to its right-justified starting column.
+        SHOW_CALLERNAME (bool) Set to False to disable displaying of the calling method at the RHS of the log message.
     """
 
     # Don't print messages if their loglevel isn't currently enabled..
@@ -73,12 +76,18 @@ def logmsg(level, msg):
         format_specifier_b = "{:"+format_specifier_a+"}"
         level_str = format_specifier_b.format(level_str)
     msg_prefix = f"[{level_str} {datetime.now().strftime('%Y-%m%d-%H%M%S')}]"
-    msg_suffix = f"[{current_method_name()}]"
-    filler = ' '*(Rmblogging.MAX_COLUMNS - len(msg_prefix) - len(msg_suffix) - len(msg) - 1)
 
-    # Workaround for lack of support for multiline output (msg_suffix was getting appended immediately adjacent to the output of the last line. Just skip the suffix if there's not enough room)
-    if len(filler) <= 8:
-        msg_suffix = ''
+    if Rmblogging.SHOW_CALLERNAME:
+
+        msg_suffix = f"[{current_method_name()}]"
+        filler = ' '*(Rmblogging.MAX_COLUMNS - len(msg_prefix) - len(msg_suffix) - len(msg) - 1)
+
+        # Workaround for this module's current lack of support for multiline messages (msg_suffix was getting appended immediately adjacent to the output of the last line. Just skip the suffix if there's not enough room)
+        if len(filler) <= 8:
+            msg_suffix = ''
+
+    else:
+        filler = msg_suffix = ''
 
     # Print the log line..
     Rmblogging.print_func(f"{msg_prefix} {msg}{filler}{msg_suffix}")
@@ -147,40 +156,54 @@ def current_method_name():
 # Add to your app..
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
-# import rmblogging
-# from rmblogging import Rmblogging, LogLevels, debug, info, notice, warning, error
-# 
-# class YourAppDemo:
-# 
-#     def __init__(self, **kwargs):
-# 
-#         # Only if you want to allow setting log level from command line, put this in your app's __init__() ...
-# 
-#         parser = argparse.ArgumentParser()
-#         parser.add_argument("--loglevel", default=None, type=str.upper, choices=['EMERGENCY', 'CRITICAL', 'ALERT', 'ERROR', 'WARNING', 'NOTICE', 'INFO', 'DEBUG'])
-#         cmdline_args, unknown_args = parser.parse_known_args(sys.argv[1:])
-#         if cmdline_args.loglevel is not None:
-#             Rmblogging.loglevel = LogLevels[cmdline_args.loglevel]
+#     import rmblogging
+#     from rmblogging import Rmblogging, LogLevels, debug, info, notice, warning, error
+#     
+#     class YourAppDemo:
+#     
+#         def __init__(self, **kwargs):
+#     
+#             # Only if you want to allow setting log level from command line, put this in your app's __init__() ...
+#     
+#             parser = argparse.ArgumentParser()
+#             parser.add_argument("--loglevel", default=None, type=str.upper, choices=['EMERGENCY', 'CRITICAL', 'ALERT', 'ERROR', 'WARNING', 'NOTICE', 'INFO', 'DEBUG'])
+#             cmdline_args, unknown_args = parser.parse_known_args(sys.argv[1:])
+#             if cmdline_args.loglevel is not None:
+#                 Rmblogging.loglevel = LogLevels[cmdline_args.loglevel]
 #
-#         # Or, to manually override from inside this code, you only need to do this..
+#             # Or, to manually override from inside this code, you only need to do this..
 #
-#         Rmblogging.loglevel = LogLevels.DEBUG
-# 
-#     def run(self):
-# 
-#         # Now you're ready to use logging..
-# 
-#         debug("debug, debug, debug, etc.")
-#         info("ho hum, just some info")
-#         notice("this is a notification only.")
-#         warning("Whoa!! 'tis a warning!\n")
-# 
-# 
-# if __name__ == '__main__':
-# 
-#     Rmblogging.loglevel = LogLevels.DEBUG  # <- optional
-#     app = YourAppDemo()
-#     app.run()
+#             Rmblogging.loglevel = LogLevels.DEBUG
+#     
+#         def run(self):
+#     
+#             # Now you're ready to use logging..
+#     
+#             debug("debug, debug, debug, etc.")
+#             info("ho hum, just some info")
+#             notice("this is a notification only.")
+#             warning("Whoa!! 'tis a warning!\n")
+#     
+#     
+#     if __name__ == '__main__':
+#     
+#         Rmblogging.loglevel = LogLevels.DEBUG  # <- optional
+#         app = YourAppDemo()
+#         app.run()
 #
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Or, for a simple, non-object based script..
+#
+#     import rmblogging
+#     from rmblogging import Rmblogging, LogLevels, debug, info, notice, warning, error
+#     
+#     def doit():
+#         debug('IN:  doit()')
+#         debug('OUT: doit()')
+#     
+#     if __name__ == '__main__':
+#         Rmblogging.loglevel = LogLevels.DEBUG  # (optional)
+#         info('calling doit..')
+#     
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
