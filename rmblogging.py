@@ -28,10 +28,12 @@ class LogLevels(IntEnum):
 
 
 class Rmblogging:
+
     # Defaults for logging..
     loglevel = LogLevels.DEBUG
     MAX_COLUMNS = 190
     SHOW_CALLERNAME = False  # Whether to display the name of the calling function (at the far right end of the line)
+    SHOW_MICROSECONDS = False  # Whether to display timestamps with microseconds precision.
     FIXED_LEVEL_LEN_ENABLED = True  # Whether to truncate the log level in the log line's prefix
     FIXED_LEVEL_LEN_LEN = 5
     print_func = print
@@ -70,22 +72,26 @@ def logmsg(level, msg):
         return
 
     # Format the log line..
+
     level_str = level.name
     if Rmblogging.FIXED_LEVEL_LEN_ENABLED:
         format_specifier_a = "{:d}.{:d}s".format(Rmblogging.FIXED_LEVEL_LEN_LEN, Rmblogging.FIXED_LEVEL_LEN_LEN)
         format_specifier_b = "{:"+format_specifier_a+"}"
         level_str = format_specifier_b.format(level_str)
-    msg_prefix = f"[{level_str} {datetime.now().strftime('%Y-%m%d-%H%M%S')}]"
+
+    now = datetime.now()
+    myformatted_timestamp_now = f"{now.strftime('%Y-%m%d-%H%M%S')}"
+    if Rmblogging.SHOW_MICROSECONDS:
+        myformatted_timestamp_now += '.' + f'{now.microsecond:06d}'
+
+    msg_prefix = f"[{level_str} {myformatted_timestamp_now}]"
 
     if Rmblogging.SHOW_CALLERNAME:
-
         msg_suffix = f"[{current_method_name()}]"
         filler = ' '*(Rmblogging.MAX_COLUMNS - len(msg_prefix) - len(msg_suffix) - len(msg) - 1)
-
         # Workaround for this module's current lack of support for multiline messages (msg_suffix was getting appended immediately adjacent to the output of the last line. Just skip the suffix if there's not enough room)
         if len(filler) <= 8:
             msg_suffix = ''
-
     else:
         filler = msg_suffix = ''
 
@@ -202,7 +208,9 @@ def current_method_name():
 #         debug('OUT: doit()')
 #     
 #     if __name__ == '__main__':
-#         Rmblogging.loglevel = LogLevels.DEBUG  # (optional)
+#         Rmblogging.loglevel = LogLevels.DEBUG  # optional, default is DEBUG (see top of class definition to confirm default hasn't changed)
+#         Rmblogging.SHOW_MICROSECONDS = True    # optional, default is False (see top of class definition to confirm default hasn't changed)
+#         Rmblogging.SHOW_CALLERNAME = True      # optional, default is False (see top of class definition to confirm default hasn't changed)
 #         info('calling doit..')
 #     
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
