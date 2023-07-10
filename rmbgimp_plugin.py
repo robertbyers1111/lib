@@ -1,15 +1,24 @@
 #!/bin/env python
 # -*- coding: utf-8 -*-
+"""
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+rmbgimp_plugin.py - My GIMP plugin
+
+Place this file in your gimp plug-in directory. No need to run or load this file. As long as it exists in
+the plug-ins directory it will be auto-loaded upon gimp startup (e.g., ~/.config/GIMP/2.10/plug-ins)
+
+All operations are currently accessible via the Rmbjr60 menu in GIMP (see 'menu=' lines below for latest location)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+"""
 
 from gimpfu import *
-from datetime import datetime
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def center_elements_horizontally(image, drawable):
-    """
-    Centers all visible layers in the horizontal dimension. Vertical position is untouched.
-    """
+"""
+Centers all visible layers in the horizontal dimension. Vertical position is untouched.
+"""
     layers = []
     listAllVisible(image, layers)
     for layer in layers:
@@ -21,9 +30,11 @@ def center_elements_horizontally(image, drawable):
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def center_elements_vertically(image, drawable):
-    """
-    Centers all visible layers in the vertical dimension. Horizontal position is untouched.
-    """
+"""
+Centers all visible layers in the vertical dimension. Horizontal position is untouched.
+"""
+    run_gegl('x.jpg', 'y.jpg')
+
     layers = []
     listAllVisible(image, layers)
     for layer in layers:
@@ -33,18 +44,19 @@ def center_elements_vertically(image, drawable):
             image.height/2 - layer.height/2
         )
 
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def listAllVisible(parent, outputList):
-    """
-    Updates a list of all currently visible layers.
+"""
+Updates a list of all currently visible layers.
 
-    NOTES:
+NOTES:
 
-    • This is a potentially recursive function.
-    • Recursion occurs when a layer is detected to belong to a group.
-    • outputList is passed by reference and, as such, should be initialized by the caller (!)
+• This is a potentially recursive function.
+• Recursion occurs when a layer is detected to belong to a group.
+• outputList is passed by reference and, as such, should be initialized by the caller (!)
 
-    """
+"""
 
     for layer in parent.layers:
         if pdb.gimp_layer_get_visible(layer):
