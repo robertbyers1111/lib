@@ -42,6 +42,11 @@ def show_noncallables(obj):
         print(f"    {x}: {y}")
 
 
+def show_docstring(obj):
+    for line in obj.__doc__.split('\n'):
+        print(line)
+
+
 if __name__ == '__main__':
     show_callables(str)
     show_noncallables(str)
